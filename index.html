@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>README Maker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1c1f4a;--lilac:#ebe6ff;--orange:#ff7a1a;--mint:#7be0c3;--paper:#fff;
+--display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+--mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--lilac);color:var(--ink);font-family:var(--display);padding:clamp(16px,4vw,40px) 16px}
+header{max-width:1100px;margin:0 auto 24px}
+h1{font-weight:800;font-size:clamp(2.2rem,7vw,3.8rem);line-height:.95;letter-spacing:-.03em;margin:0 0 8px}
+header p{margin:0;font-size:1.1rem;max-width:52ch}
+.grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:20px;align-items:start}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+form,.preview{background:var(--paper);border-radius:24px;padding:20px;box-shadow:0 6px 0 var(--ink)}
+label{display:block;font-weight:600;margin:0 0 14px}
+label span{display:block;margin-bottom:5px}
+input[type=text],textarea,select{
+  width:100%;font:400 .95rem var(--mono);color:var(--ink);background:var(--lilac);
+  border:2px solid transparent;border-radius:10px;padding:10px 12px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--ink)}
+.checks{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:4px}
+.checks label{display:flex;gap:6px;align-items:center;margin:0;font-weight:600}
+fieldset{border:0;padding:0;margin:0}
+legend{font-weight:600;margin-bottom:6px;padding:0}
+.bar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+button{font:800 1rem var(--display);border-radius:999px;padding:10px 20px;cursor:pointer;border:2px solid var(--ink)}
+.main{background:var(--orange);color:var(--ink)}
+.main:hover{background:#ff8c38}
+.alt{background:transparent;color:var(--ink)}
+.alt:hover{background:var(--ink);color:var(--paper)}
+#out{min-height:520px;resize:vertical;line-height:1.5;background:var(--lilac)}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.hint{font-size:.9rem;margin:10px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>README Maker</h1>
+  <p>Remplis le formulaire, récupère un README propre en Markdown. Tout se passe dans ton navigateur.</p>
+</header>
+
+<div class="grid">
+<form id="f" onsubmit="return false">
+  <label><span>Nom du projet</span><input type="text" id="name" value="Mon super projet"></label>
+  <label><span>Description en une phrase</span><input type="text" id="desc" value="Un outil qui fait gagner du temps à tout le monde."></label>
+  <label><span>Technologies (séparées par des virgules)</span><input type="text" id="tech" value="JavaScript, HTML, CSS"></label>
+  <label><span>Commande d'installation</span><input type="text" id="install" value="git clone https://github.com/pseudo/projet.git"></label>
+  <label><span>Comment l'utiliser</span><textarea id="usage" rows="3">Ouvre index.html dans ton navigateur.</textarea></label>
+  <label><span>Pseudo GitHub</span><input type="text" id="user" value="pseudo"></label>
+  <label><span>Licence</span>
+    <select id="lic"><option>MIT</option><option>Apache-2.0</option><option>GPL-3.0</option><option value="">Aucune</option></select>
+  </label>
+  <fieldset><legend>Sections à inclure</legend>
+    <div class="checks">
+      <label><input type="checkbox" id="sBadges" checked> Badges</label>
+      <label><input type="checkbox" id="sInstall" checked> Installation</label>
+      <label><input type="checkbox" id="sUsage" checked> Utilisation</label>
+      <label><input type="checkbox" id="sContrib" checked> Contribuer</label>
+    </div>
+  </fieldset>
+</form>
+
+<section class="preview">
+  <div class="bar">
+    <button class="main" id="copy" type="button">Copier le Markdown</button>
+    <button class="alt" id="dl" type="button">Télécharger README.md</button>
+  </div>
+  <textarea id="out" spellcheck="false" aria-label="README généré"></textarea>
+  <p class="hint">Tu peux aussi modifier le texte directement ici. Il sera remplacé si tu changes le formulaire.</p>
+</section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fields = ["name","desc","tech","install","usage","user","lic","sBadges","sInstall","sUsage","sContrib"];
+
+function make(){
+  const v = id => $(id).type === "checkbox" ? $(id).checked : $(id).value.trim();
+  const techs = v("tech").split(",").map(t=>t.trim()).filter(Boolean);
+  let md = `# ${v("name")}\n\n${v("desc")}\n\n`;
+  if (v("sBadges")){
+    const b = techs.map(t=>`![${t}](https://img.shields.io/badge/-${encodeURIComponent(t.replace(/-/g,"--"))}-1c1f4a)`);
+    if (v("lic")) b.push(`![Licence](https://img.shields.io/badge/licence-${encodeURIComponent(v("lic").replace(/-/g,"--"))}-ff7a1a)`);
+    if (b.length) md += b.join(" ") + "\n\n";
+  }
+  if (v("sInstall") && v("install")) md += `## Installation\n\n\`\`\`bash\n${v("install")}\n\`\`\`\n\n`;
+  if (v("sUsage") && v("usage")) md += `## Utilisation\n\n${v("usage")}\n\n`;
+  if (v("sContrib")) md += `## Contribuer\n\nLes idées et les corrections sont les bienvenues :\n\n1. Fais un fork du projet\n2. Crée une branche (\`git checkout -b ma-fonctionnalite\`)\n3. Commite tes changements\n4. Ouvre une pull request\n\n`;
+  if (v("lic")) md += `## Licence\n\nDistribué sous licence ${v("lic")}.\n\n`;
+  if (v("user")) md += `---\n\nFait par [@${v("user")}](https://github.com/${v("user")})\n`;
+  $("out").value = md;
+}
+
+fields.forEach(id => $(id).addEventListener("input", make));
+$("copy").addEventListener("click", async e => {
+  try { await navigator.clipboard.writeText($("out").value); e.target.textContent = "Copié !"; }
+  catch { e.target.textContent = "Copie impossible"; }
+  setTimeout(()=>e.target.textContent = "Copier le Markdown", 1500);
+});
+$("dl").addEventListener("click", () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([$("out").value], {type:"text/markdown"}));
+  a.download = "README.md";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+make();
+</script>
+</body>
+</html>
